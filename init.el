@@ -20,4 +20,4 @@
 
 ;;; Org mode
 
-(setq org-directory (expand-file-name "~/andy_workspace/org/"))
+(setq org-directory (expand-file-name "~/Documents/andy_workspace/org/"))

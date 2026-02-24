@@ -1,8 +1,7 @@
-;;; org-flashcards.el --- Simple SRS and Curation Queue for Org Mode
+;;; org-study.el --- Simple SRS and Curation Queue for Org Mode
 
 (require 'cl-lib)
 (require 'org-element)
-(require 'org-study-api)
 
 ;; --- Constants for SM2 Properties ---
 (defconst HASH-PROPERTY "HASH")
@@ -220,8 +219,8 @@
                                  :question (concat context "\n" (make-string level ?*) " " (nth 1 tokens))
                                  :answer (or (nth 0 tokens) "No answer") :due (or r-due "")
                                  :repetition (string-to-number (or (org-entry-get nil BI-REPETITION-REVERSE-PROPERTY) "0"))
-                                 :ease-factor (string-to-number (or (org-entry-get nil BI-REPETITION-REVERSE-PROPERTY) "2.5"))
-                                 :interval (string-to-number (or (org-entry-get nil BI-REPETITION-REVERSE-PROPERTY) "0"))
+                                 :ease-factor (string-to-number (or (org-entry-get nil BI-EASE-FACTOR-REVERSE-PROPERTY) "2.5"))
+                                 :interval (string-to-number (or (org-entry-get nil BI-INTERVAL-REVERSE-PROPERTY) "0"))
                                  :type 'BI :bi-type 'REVERSE)
                            heading-flashcards)))))
               ((eq type 'CLOZE)
@@ -399,4 +398,4 @@
         (push (concat (make-string (org-outline-level) ?*) " " (andy/org-heading-at-point/get-heading-text) "\n\n" (andy/org-heading-at-point/get-body-text)) ctx))
       (mapconcat #'identity ctx "\n"))))
 
-(provide 'org-flashcards)
+(provide 'org-study)
