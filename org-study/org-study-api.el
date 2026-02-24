@@ -4,6 +4,7 @@
 (require 'org-element)
 (require 'subr-x)
 (require 'vtable)
+(require 'org-study)
 
 (defconst BUFFER-NAME "*ORG-STUDY*")
 (defconst ID-PROPERTY "ID")
@@ -11,7 +12,9 @@
 (defconst REVIEW-DUE-PROPERTY "REVIEW_DUE")
 (defconst REVIEW-INCREMENT-PROPERTY "REVIEW_INCREMENT")
 
-(defun andy/org-study/review-notes ()
+(defalias 'org-study/start-study 'andy/org-study/start-study)
+
+(defun org-study/review-notes ()
   
   (interactive)
 
@@ -101,7 +104,7 @@
 				 (time-add current-review-due-TIMESTAMP current-review-incremental-TIMESTAMP)))
 			       (next-review-incremental-STRING
 				(number-to-string
-				 (max 1 (- 1 (string-to-number current-review-incremental-STRING))))))
+				 (max 1 (- (string-to-number current-review-incremental-STRING) 1)))))
 			  (save-window-excursion
 			    (org-id-goto heading-id-STRING)
 			    (org-entry-put (point) REVIEW-DUE-PROPERTY next-review-due-STRING)

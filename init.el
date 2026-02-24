@@ -2,8 +2,8 @@
 
 ;;; Imports
 
-(add-to-list 'load-path (expand-file-name "org-study" user-emacs-directory))
-(load "org-study")
+(add-to-list 'load-path (expand-file-name "org-study-api" user-emacs-directory))
+(load "org-study-api")
 
 ;;; My functions
 
@@ -14,6 +14,7 @@
 ;;; Emacs
 
 (setq make-backup-files nil)
+(global-display-line-numbers-mode 1) ;; Always show line number
 (tool-bar-mode -1)
 
 (set-frame-parameter nil 'fullscreen 'maximized) ;; Maximize Emacs window when I open it

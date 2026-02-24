@@ -8,11 +8,14 @@
 (defconst TREECLOZE-HASH-PROPERTY "TREE_CLOZE_HASH")
 
 ;; Flashcard Properties
+
+;; Flashcard Properties -- SINGLE
 (defconst SINGLE-DUE-PROPERTY "SINGLE_DUE")
 (defconst SINGLE-INTERVAL-PROPERTY "SINGLE_INTERVAL")
 (defconst SINGLE-EASE-FACTOR-PROPERTY "SINGLE_EASE_FACTOR")
 (defconst SINGLE-REPETITION-PROPERTY "SINGLE_REPETITION")
 
+;; Flashcard Properties -- BI
 (defconst BI-DUE-FORWARD-PROPERTY "BI_FORWARD_DUE")
 (defconst BI-INTERVAL-FORWARD-PROPERTY "BI_INTERVAL_FORWARD")
 (defconst BI-EASE-FACTOR-FORWARD-PROPERTY "BI_EASE_FACTOR_FORWARD")
@@ -22,11 +25,13 @@
 (defconst BI-EASE-FACTOR-REVERSE-PROPERTY "BI_EASE_FACTOR_REVERSE")
 (defconst BI-REPETITION-REVERSE-PROPERTY "BI_REPETITION_REVERSE")
 
+;; Flashcard Properties -- CLOZE
 (defconst CLOZE-DUE-PROPERTY-PREFIX "CLOZE_DUE_")
 (defconst CLOZE-INTERVAL-PROPERTY-PREFIX "CLOZE_INTERVAL_")
 (defconst CLOZE-EASE-FACTOR-PROPERTY-PREFIX "CLOZE_EASE_FACTOR_")
 (defconst CLOZE-REPETITION-PROPERTY-PREFIX "CLOZE_REPETITION_")
 
+;; Flashcard Properties -- TREECLOZE
 (defconst TREECLOZE-DUE-PROPERTY-PREFIX "TREECLOZE_DUE_")
 (defconst TREECLOZE-INTERVAL-PROPERTY-PREFIX "TREECLOZE_INTERVAL_")
 (defconst TREECLOZE-EASE-FACTOR-PROPERTY-PREFIX "TREECLOZE_EASE_FACTOR_")
@@ -39,6 +44,94 @@
 (defvar due-flashcards nil "Current list of due cards in a study session.")
 (defvar randomized-queue nil "Current list of markers for the processing queue.")
 
+;;; SINGLE Implementation
+
+(defun org-study--save-single (flashcard)
+  "Save SINGLE flashcard properties at point.
+FLASHCARD is a plist with :due, :repetition, :ease-factor, :interval."
+  (let ((due (plist-get flashcard :due))
+	(repetition (plist-get flashcard :repetition))
+	(ease-factor (plist-get flashcard :ease-factor))
+	(interval (plist-get flashcard :interval)))
+    (org-entry-put (point) SINGLE-DUE-PROPERTY due)
+    (org-entry-put (point) SINGLE-REPETITION-PROPERTY (number-to-string repetition))
+    (org-entry-put (point) SINGLE-EASE-FACTOR-PROPERTY (format "%.2f" ease-factor))
+    (org-entry-put (point) SINGLE-INTERVAL-PROPERTY (number-to-string interval))))
+
+(defun org-study--parse-single () nil)
+
+(defun org-study--props-single()
+  "Returns a list of SINGLE property names."
+  (list SINGLE-DUE-PROPERTY
+	SINGLE-INTERVAL-PROPERTY
+	SINGLE-EASE-FACTOR-PROPERTY
+	SINGLE-REPETITION-PROPERTY))
+
+;;; BI Implementation
+
+(defun org-study--save-bi () nil)
+(defun org-study--parse-bi () nil)
+
+(defun org-study--props-bi ()
+  "Returns a list of BI property names."
+  (list BI-DUE-FORWARD-PROPERTY
+	BI-INTERVAL-FORWARD-PROPERTY
+	BI-EASE-FACTOR-FORWARD-PROPERTY
+	BI-REPETITION-FORWARD-PROPERTY
+	BI-DUE-REVERSE-PROPERTY
+	BI-INTERVAL-REVERSE-PROPERTY
+	BI-EASE-FACTOR-REVERSE-PROPERTY
+	BI-REPETITION-REVERSE-PROPERTY))
+
+;;; CLOZE Implementation
+
+(defun org-study--save-cloze () nil)
+(defun org-study--parse-bi () nil)
+
+(defun org-study--props-cloze ()
+  "Returns a list of CLOZE property names."
+  (list CLOZE-DUE-PROPERTY-PREFIX
+	CLOZE-INTERVAL-PROPERTY-PREFIX
+	CLOZE-EASE-FACTOR-PROPERTY-PREFIX
+	CLOZE-REPETITION-PROPERTY-PREFIX))
+
+;;; TREECLOZE Implementation
+
+(defun org-study--save-treecloze () nil)
+(defun org-study--parse-treecloze() nil)
+
+(defun org-study--props-treecloze ()
+  "Returns a list of TREECLOZE property names."
+  (list TREECLOZE-DUE-PROPERTY-PREFIX
+	TREECLOZE-INTERVAL-PROPERTY-PREFIX
+	TREECLOZE-EASE-FACTOR-PROPERTY-PREFIX
+	TREECLOZE-REPETITION-PROPERTY-PREFIX))
+
+;;; Dispatch Table
+
+(defvar org-study--flashcard-handlers
+  `(
+    (SINGLE . ((:save . org-study--save-single)
+	       (:parse . org-study--parse-single)
+	       (:props . org-study--props-single)))
+
+    (BI . ((:save . org-study--save-bi)
+	   (:parse . org-study--parse-bi)
+	   (:props . org-study--props-bi)))
+
+    (CLOZE . ((:save . org-study--save-cloze)
+	      (:parse . org-study--parse-cloze)
+	      (:props . org-study--props-cloze)))
+
+    (TREECLOZE . ((:save . org-study--save-treecloze)
+		  (:parse . org-study--parse-treecloze)
+		  (:props . org-study--props-treecloze)))
+    ))
+
+(defun org-study--get-handler (type operation)
+  "Get handler function for TYPE and OPERATION (:save, :parse, :interval)."
+  (alist-get operation (alist-get type org-study--flashcard-handlers)))
+
 ;;; --- UI & Mode ---
 
 (define-derived-mode flashcard-mode org-mode "FlashcardMode"
@@ -50,9 +143,6 @@
   (keymap-set flashcard-mode-map "h" 'andy/org-study/rate-flashcard-hard)
   (keymap-set flashcard-mode-map "f" 'andy/org-study/rate-flashcard-forgot)
   (keymap-set flashcard-mode-map "E" 'andy/org-study/mark-edit-later))
-
-;; Global-ish keybindings for Queue sessions
-(keymap-set org-mode-map "C-c q n" 'andy/org-study/next-queue-item)
 
 (defun andy/org-study/mark-edit-later ()
   "Flag the current card with :edit-later: and skip it."
@@ -98,6 +188,7 @@
 ;;; --- Core SRS Logic ---
 
 (defun andy/org-study/shuffle-list (list)
+  "Returns a new list with elements of LIST in random order. Uses Fisher-Yates shuffle algorithm. Preserves all elements."
   (let ((vec (vconcat list))
         (len (length list)))
     (dotimes (i len)
@@ -115,17 +206,16 @@
          (ease-factor (plist-get flashcard :ease-factor))
          (interval (plist-get flashcard :interval))
          (flashcard-type (plist-get flashcard :type))
-         (marker (org-id-find id 'marker)))
+         (marker (org-id-find id 'marker))
+	 (save-handler (org-study--get-handler flashcard-type :save)))
     (when marker
       (with-current-buffer (marker-buffer marker)
         (save-excursion
           (goto-char (marker-position marker))
           (cond
            ((eq flashcard-type 'SINGLE)
-            (org-entry-put (point) SINGLE-DUE-PROPERTY due)
-            (org-entry-put (point) SINGLE-REPETITION-PROPERTY (number-to-string repetition))
-            (org-entry-put (point) SINGLE-EASE-FACTOR-PROPERTY (format "%.2f" ease-factor))
-            (org-entry-put (point) SINGLE-INTERVAL-PROPERTY (number-to-string interval)))
+	    (funcall save-handler flashcard))
+	   ;; TODO: implement BI in dispatch table.
            ((eq flashcard-type 'BI)
             (let ((bi-type (plist-get flashcard :bi-type)))
               (cond
@@ -139,12 +229,14 @@
                 (org-entry-put (point) BI-REPETITION-REVERSE-PROPERTY (number-to-string repetition))
                 (org-entry-put (point) BI-EASE-FACTOR-REVERSE-PROPERTY (format "%.2f" ease-factor))
                 (org-entry-put (point) BI-INTERVAL-REVERSE-PROPERTY (number-to-string interval))))))
+	   ;; TODO: Implement CLOZE in dispatch table.
            ((eq flashcard-type 'CLOZE)
             (let ((suffix (number-to-string (plist-get flashcard :cloze-idx))))
               (org-entry-put (point) (concat CLOZE-DUE-PROPERTY-PREFIX suffix) due)
               (org-entry-put (point) (concat CLOZE-REPETITION-PROPERTY-PREFIX suffix) (number-to-string repetition))
               (org-entry-put (point) (concat CLOZE-EASE-FACTOR-PROPERTY-PREFIX suffix) (format "%.2f" ease-factor))
               (org-entry-put (point) (concat CLOZE-INTERVAL-PROPERTY-PREFIX suffix) (number-to-string interval))))
+	   ;; TODO: Implement TREECLOZE in dispatch table.
            ((eq flashcard-type 'TREECLOZE)
             (let ((suffix (number-to-string (plist-get flashcard :cloze-idx))))
               (org-entry-put (point) (concat TREECLOZE-DUE-PROPERTY-PREFIX suffix) due)
@@ -395,7 +487,7 @@
   (save-excursion
     (let (ctx)
       (while (org-up-heading-safe)
-        (push (concat (make-string (org-outline-level) ?*) " " (andy/org-heading-at-point/get-heading-text) "\n\n" (andy/org-heading-at-point/get-body-text)) ctx))
+        (push (concat (make-string (org-outline-level) ?*) " " (org-get-heading 'no-todo 'no-tags) "\n\n" (andy/org-heading-at-point/get-body-text)) ctx))
       (mapconcat #'identity ctx "\n"))))
 
 (provide 'org-study)
