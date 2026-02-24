@@ -2,8 +2,9 @@
 
 ;;; Imports
 
-(add-to-list 'load-path (expand-file-name "org-study-api" user-emacs-directory))
-(load "org-study-api")
+(let ((config-dir (file-name-directory (or load-file-name buffer-file-name))))
+  (add-to-list 'load-path (expand-file-name "org-study" config-dir))
+  (load "org-study-api"))
 
 ;;; My functions
 
