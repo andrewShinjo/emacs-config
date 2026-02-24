@@ -60,7 +60,10 @@
                (time-less-p (org-time-string-to-time review-due) now)))
            headings-filtered-by-tags))
 
-	 (shuffled (sort headings-filtered-by-due (lambda (_a _b) (zerop (random 2))))))
+	 (sorted
+	  (sort headings-filtered-by-due
+	  (lambda (a b)
+	    (string< (heading-review-due a) (heading-review-due b))))))
     
     ;; function here
     
@@ -74,7 +77,7 @@
 		      (:name "Text" :width 50)
 		      (:name "Tags" :width 16)
 		      (:name "Review Due" :width 50))
-	   :objects shuffled
+	   :objects sorted
 	   :getter (lambda (object column vtable)
 		     (pcase (vtable-column vtable column)
 		       ("Text" (heading-text object))
@@ -90,13 +93,15 @@
 			       (current-review-due-STRING (heading-review-due object))
 			       (current-review-incremental-STRING (heading-review-increment object))
 			       (current-review-due-TIMESTAMP (date-to-time current-review-due-STRING))
-			       (current-review-incremental-TIMESTAMP (days-to-time (string-to-number current-review-incremental-STRING)))
+			       (current-review-incremental-TIMESTAMP
+				(days-to-time (string-to-number current-review-incremental-STRING)))
 			       (next-review-due-STRING
 				(format-time-string
 				 "%Y-%m-%d %H:%M"
 				 (time-add current-review-due-TIMESTAMP current-review-incremental-TIMESTAMP)))
 			       (next-review-incremental-STRING
-				(number-to-string (max 1 (- 1 (string-to-number current-review-incremental-STRING))))))
+				(number-to-string
+				 (max 1 (- 1 (string-to-number current-review-incremental-STRING))))))
 			  (save-window-excursion
 			    (org-id-goto heading-id-STRING)
 			    (org-entry-put (point) REVIEW-DUE-PROPERTY next-review-due-STRING)
@@ -111,7 +116,8 @@
 			       (current-review-due-STRING (heading-review-due object))
 			       (current-review-incremental-STRING (heading-review-increment object))
 			       (current-review-due-TIMESTAMP (date-to-time current-review-due-STRING))
-			       (current-review-incremental-TIMESTAMP (days-to-time (string-to-number current-review-incremental-STRING)))
+			       (current-review-incremental-TIMESTAMP
+				(days-to-time (string-to-number current-review-incremental-STRING)))
 			       (next-review-due-STRING
 				(format-time-string
 				 "%Y-%m-%d %H:%M"

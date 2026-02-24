@@ -55,18 +55,6 @@
 ;; Global-ish keybindings for Queue sessions
 (keymap-set org-mode-map "C-c q n" 'andy/org-study/next-queue-item)
 
-(defun andy/org-study/dispatch ()
-  "Immediately starts either an SRS Flashcard session or a Curation Queue session with 50/50 odds."
-  (interactive)
-  (random t) 
-  (if (= (random 2) 0)
-      (progn
-        (message "Mode: SRS Flashcards")
-        (andy/org-study/start-study))
-    (progn
-      (message "Mode: Curation Queue")
-      (andy/org-study/start-queue))))
-
 (defun andy/org-study/mark-edit-later ()
   "Flag the current card with :edit-later: and skip it."
   (interactive)
@@ -201,7 +189,7 @@
                (let* ((due (org-entry-get nil SINGLE-DUE-PROPERTY))
                       (is-due (or (not due) (time-less-p (date-to-time due) now))))
                  (when is-due
-                   (let* ((text (andy/org-heading-at-point/get-heading-text))
+                   (let* ((text  (org-get-heading 'no-todo 'no-tags))
                           (tokens (string-split text SINGLE-DELIMITER)))
                      (push (list :org-file org-file :ID ID 
                                  :question (concat context "\n" (make-string level ?*) " " (nth 0 tokens))
@@ -212,7 +200,7 @@
                                  :type 'SINGLE)
                            heading-flashcards)))))
               ((eq type 'BI)
-               (let* ((text (andy/org-heading-at-point/get-heading-text))
+               (let* ((text (org-get-heading 'no-todo 'no-tags))
                       (tokens (string-split text BI-DELIMITER)))
                  (let* ((f-due (org-entry-get nil BI-DUE-FORWARD-PROPERTY))
                         (is-f (or (not f-due) (time-less-p (date-to-time f-due) now))))
@@ -237,7 +225,7 @@
                                  :type 'BI :bi-type 'REVERSE)
                            heading-flashcards)))))
               ((eq type 'CLOZE)
-               (let* ((text (andy/org-heading-at-point/get-heading-text))
+               (let* ((text  (org-get-heading 'no-todo 'no-tags))
                       (answers '()) (start 0))
                  (while (string-match "\\*\\([^*]+\\)\\*" text start)
                    (push (match-string 1 text) answers)
@@ -257,14 +245,14 @@
                                    :type 'CLOZE :cloze-idx i)
                              heading-flashcards))))))
               ((eq type 'TREECLOZE)
-               (let* ((parent (andy/org-heading-at-point/get-heading-text))
+               (let* ((parent  (org-get-heading 'no-todo 'no-tags))
                       (children-data '()))
                  (save-excursion
                    (when (org-goto-first-child)
-                     (push (list :title (andy/org-heading-at-point/get-heading-text)
+                     (push (list :title (org-get-heading 'no-todo 'no-tags)
                                  :body (andy/org-heading-at-point/get-body-text)) children-data)
                      (while (org-get-next-sibling)
-                       (push (list :title (andy/org-heading-at-point/get-heading-text)
+                       (push (list :title (org-get-heading 'no-todo 'no-tags)
                                    :body (andy/org-heading-at-point/get-body-text)) children-data))))
                  (setq children-data (nreverse children-data))
                  (dotimes (i (length children-data))
@@ -303,7 +291,7 @@
 (defun andy/org-study/delete-properties ()
   (let ((types (andy/org-study/get-flashcard-types-on-heading-at-point)))
     (when types
-      (let* ((text (andy/org-heading-at-point/get-heading-text))
+      (let* ((text (org-get-heading 'no-todo 'no-tags))
              (new-hash (number-to-string (sxhash text)))
              (old-hash (org-entry-get nil HASH-PROPERTY))
              (new-tree-hash (number-to-string (sxhash (andy/org-study/serialize-child-headings))))
@@ -326,11 +314,15 @@
   (when (andy/org-study/get-flashcard-types-on-heading-at-point) 
     (org-id-get-create)))
 
-(defun andy/org-study/serialize-child-headings () (let (children) (save-excursion (when (org-goto-first-child) (push (andy/org-heading-at-point/get-heading-text) children) (while (org-get-next-sibling) (push (andy/org-heading-at-point/get-heading-text) children)))) (mapconcat #'identity (sort children #'string<) " | ")))
+(defun andy/org-study/serialize-child-headings ()
+  (let (children)
+    (save-excursion
+      (when (org-goto-first-child)
+	(push (org-get-heading 'no-todo 'no-tags) children) (while (org-get-next-sibling) (push (org-get-heading 'no-todo 'no-tags) children)))) (mapconcat #'identity (sort children #'string<) " | ")))
 
 (defun andy/org-study/get-flashcard-types-on-heading-at-point ()
-  (let* ((text (andy/org-heading-at-point/get-heading-text))
-         (tags (andy/org-heading-at-point/get-tags))
+  (let* ((text (org-get-heading 'no-todo 'no-tags))
+         (tags (org-get-tags nil t))
          (types nil))
     (unless (or (cl-some (lambda (tag) (equal "edit-later" tag)) tags)
                 (string-match-p ":edit-later:" text))
@@ -385,12 +377,7 @@
     (setq due-flashcards (andy/org-study/shuffle-list collected))
     (andy/org-study/display-flashcard-question)))
 
-;;; --- Randomized Queue (No Scheduling) ---
-
 ;; --- Helper Functions ---
-
-(defun andy/org-heading-at-point/get-heading-text () (org-get-heading 'no-todo 'no-tags))
-(defun andy/org-heading-at-point/get-tags () (org-get-tags nil t))
 
 (defun andy/org-heading-at-point/get-body-text ()
   (save-excursion
