@@ -2,6 +2,7 @@
 
 (require 'org-study-model)
 (require 'org-element)
+(require 'seq)
 (require 'subr-x)
 (require 'vtable)
 (require 'org-study)
@@ -42,7 +43,7 @@
                    :id (org-entry-get nil ID-PROPERTY)
 		   :text (org-get-heading 'no-todo 'no-tags)
                    :review-due (or (org-entry-get (point) REVIEW-DUE-PROPERTY) (format-time-string "%Y-%m-%d"))
-		   :review-increment (or (org-entry-get (point) REVIEW-INCREMENT-PROPERTY) "1")
+		   :review-increment (or (org-entry-get (point) REVIEW-INCREMENT-PROPERTY) "4")
                    :tags (org-get-tags nil t)))
                 t)))
            all-files))
@@ -65,8 +66,8 @@
 
 	 (sorted
 	  (sort headings-filtered-by-due
-	  (lambda (a b)
-	    (string< (heading-review-due a) (heading-review-due b))))))
+		(lambda (a b)
+		  (zerop (random 2))))))
     
     ;; function here
     
@@ -126,7 +127,7 @@
 				 "%Y-%m-%d %H:%M"
 				 (time-add current-review-due-TIMESTAMP current-review-incremental-TIMESTAMP)))
 			       (next-review-incremental-STRING
-				(number-to-string (+ 1 (string-to-number current-review-incremental-STRING)))))
+				(number-to-string (max 4 (+ 1 (string-to-number current-review-incremental-STRING))))))
 			  (save-window-excursion
 			    (org-id-goto heading-id-STRING)
 			    (org-entry-put (point) REVIEW-DUE-PROPERTY next-review-due-STRING)
