@@ -66,8 +66,8 @@
 
 	 (sorted
 	  (sort headings-filtered-by-due
-		(lambda (a b)
-		  (zerop (random 2))))))
+	  (lambda (a b)
+	    (string< (heading-review-due a) (heading-review-due b))))))
     
     ;; function here
     
@@ -99,10 +99,16 @@
 			       (current-review-due-TIMESTAMP (date-to-time current-review-due-STRING))
 			       (current-review-incremental-TIMESTAMP
 				(days-to-time (string-to-number current-review-incremental-STRING)))
+			       (next-review-base-TIMESTAMP
+				(if (time-less-p current-review-due-TIMESTAMP (current-time))
+				    (current-time)
+				  current-review-due-TIMESTAMP))
 			       (next-review-due-STRING
 				(format-time-string
 				 "%Y-%m-%d %H:%M"
-				 (time-add current-review-due-TIMESTAMP current-review-incremental-TIMESTAMP)))
+				 (time-add
+				  next-review-base-TIMESTAMP
+				  current-review-incremental-TIMESTAMP)))
 			       (next-review-incremental-STRING
 				(number-to-string
 				 (max 1 (- (string-to-number current-review-incremental-STRING) 1)))))
@@ -122,10 +128,14 @@
 			       (current-review-due-TIMESTAMP (date-to-time current-review-due-STRING))
 			       (current-review-incremental-TIMESTAMP
 				(days-to-time (string-to-number current-review-incremental-STRING)))
+			       (next-review-base-TIMESTAMP
+				(if (time-less-p current-review-due-TIMESTAMP (current-time))
+				    (current-time)
+				  current-review-due-TIMESTAMP))
 			       (next-review-due-STRING
 				(format-time-string
 				 "%Y-%m-%d %H:%M"
-				 (time-add current-review-due-TIMESTAMP current-review-incremental-TIMESTAMP)))
+				 (time-add next-review-base-TIMESTAMP current-review-incremental-TIMESTAMP)))
 			       (next-review-incremental-STRING
 				(number-to-string (max 4 (+ 1 (string-to-number current-review-incremental-STRING))))))
 			  (save-window-excursion
