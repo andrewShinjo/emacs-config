@@ -69,9 +69,10 @@
       (andy/org-study/display-flashcard-question))))
 
 (defun andy/org-study/rate-flashcard (quality)
-  (let ((flashcard (car due-flashcards)))
-    (setcar due-flashcards (andy/org-study/update-card-sm2 flashcard quality))
-    (andy/org-study/flashcard/save flashcard)
+  (let* ((flashcard (car due-flashcards))
+         (updated-flashcard (andy/org-study/update-card-sm2 flashcard quality)))
+    (setcar due-flashcards updated-flashcard)
+    (andy/org-study/flashcard/save updated-flashcard)
     (pop due-flashcards)
     (andy/org-study/display-flashcard-question)))
 

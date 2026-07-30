@@ -5,6 +5,7 @@
 (require 'cl-lib)
 (require 'subr-x)
 (require 'org)
+(require 'org-heading-at-point)
 
 (defgroup org-study nil
   "Review queue for org-mode headings."
@@ -43,22 +44,23 @@
          (with-current-buffer (find-file-noselect file)
            (let ((org-use-tag-inheritance nil)
                  (results '()))
-             (org-map-entries
-              (lambda ()
-                (let* ((p (point))
-                       (priority (let ((v (org-entry-get p REVIEW-PRIORITY-PROPERTY)))
-                                   (and v (string-to-number v))))
-                       (last-reviewed (org-entry-get p REVIEW-LAST-PROPERTY)))
-                  (push
-                   (make-heading
-                    :file file
-                    :id (org-id-get p)
-                    :text (org-get-heading 'no-todo 'no-tags)
-                    :tags (org-get-tags nil t)
-                    :priority priority
-                    :last-reviewed last-reviewed)
-                   results)))
-              (string-join tags "|") 'file)
+              (org-map-entries
+               (lambda ()
+                 (unless (andy/org-study/get-flashcard-types-on-heading-at-point)
+                   (let* ((p (point))
+                          (priority (let ((v (org-entry-get p REVIEW-PRIORITY-PROPERTY)))
+                                      (and v (string-to-number v))))
+                          (last-reviewed (org-entry-get p REVIEW-LAST-PROPERTY)))
+                     (push
+                      (make-heading
+                       :file file
+                       :id (org-id-get p)
+                       :text (org-get-heading 'no-todo 'no-tags)
+                       :tags (org-get-tags nil t)
+                       :priority priority
+                       :last-reviewed last-reviewed)
+                      results))))
+               (string-join tags "|") 'file)
              (nconc (nreverse results)
                     (org-study--collect-file-level-items file tags))))))
      files)))
