@@ -1,16 +1,16 @@
 ;;; init.el
 
-;; Package Manager
+;;; Package Manager
 
+;; Setting package-install-upgrade-built-in to `t` changes Emacs' package manager behavior
+;; so that built-in packages are eligible for upgrades from package archives.
 (setq package-install-upgrade-built-in t)
 
 (require 'package)
-(add-to-list 'package-archives
-             '("melpa-stable" . "http://stable.melpa.org/packages/") t)
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/") t)
-(package-initialize)
 
+(add-to-list 'package-archives '("melpa-stable" . "http://stable.melpa.org/packages/") t)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(package-initialize)
 
 ;;; Imports
 
