@@ -1,4 +1,7 @@
 org-roam.db
+.org-id-locations 
+bookmarks 
+tramp
 auto-save-list/
 elpa/
 transient/

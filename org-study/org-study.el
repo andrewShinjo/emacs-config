@@ -223,12 +223,17 @@
 
 (defun andy/org-study/review-flashcards ()
   (interactive)
-  (let ((files (seq-filter (lambda (f) (string= (file-name-extension f) "org"))
-                          (directory-files-recursively org-directory directory-files-no-dot-files-regexp)))
-	(collected nil))
-    (dolist (f files) 
+  
+  (let ((files
+		 (seq-filter
+		  ;; PRED =
+		  (lambda (f) (string= (file-name-extension f) "org"))
+		  ;; SEQUENCE =
+          (directory-files-recursively org-directory directory-files-no-dot-files-regexp)))
+		(collected nil))
+    (dolist (file files) 
       (let ((create-lockfiles nil))
-        (with-current-buffer (find-file-noselect f) 
+        (with-current-buffer (find-file-noselect file) 
           (org-map-entries 
            (lambda () 
              (when (andy/org-study/get-flashcard-types-on-heading-at-point)
@@ -237,7 +242,7 @@
            nil 'file) 
           (save-buffer))))
   (org-id-update-id-locations)
-  (dolist (f files) (setq collected (append collected (andy/org-study/get-flashcards-in-org-file f))))
+  (dolist (file files) (setq collected (append collected (andy/org-study/get-flashcards-in-org-file file))))
   (setq due-flashcards (andy/org-study/shuffle-list collected))
   (andy/org-study/display-flashcard-question)))
 

@@ -3,7 +3,6 @@
 (require 'org-study-queue)
 (require 'org-study)
 
-(defalias 'org-study/review-flashcards 'andy/org-study/review-flashcards)
 (defalias 'org-study/review-tag 'andy/org-study/review-tag)
 
 (defun org-study--review-tags-internal (tags &optional skip)
