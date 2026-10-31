@@ -5,3 +5,5 @@ tramp
 auto-save-list/
 elpa/
 transient/
+eln-cache/
+projects.eld

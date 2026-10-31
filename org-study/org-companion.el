@@ -1,1 +1,1 @@
-;;; org-companion.el
+;;; org-companion.el -*- lexical-binding: t; -*-

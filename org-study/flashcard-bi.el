@@ -1,9 +1,7 @@
-;;; flashcard-bi.el
+;;; flashcard-bi.el --- Bidirectional flashcards -*- lexical-binding: t; -*-
 
 (require 'org-heading-at-point)
-(require 'org-study-link)
 
-(defconst BI-DELIMITER " :<-> ")
 (defconst BI-TAG "bi")
 
 (defconst BI-DUE-FORWARD-PROPERTY "BI_FORWARD_DUE")
@@ -15,82 +13,60 @@
 (defconst BI-EASE-FACTOR-REVERSE-PROPERTY "BI_EASE_FACTOR_REVERSE")
 (defconst BI-REPETITION-REVERSE-PROPERTY "BI_REPETITION_REVERSE")
 
-(defun andy/org-study/flashcard-bi/is-flashcard (text tags)
+(defun andy/org-study/flashcard-bi/is-flashcard (_text tags)
+  "Return non-nil when TAGS marks the heading as a bidirectional card."
   (member BI-TAG tags))
 
 (defun andy/org-study/flashcard-bi/save (flashcard)
-  (let ((due (plist-get flashcard :due))
-        (repetition (plist-get flashcard :repetition))
-        (ease-factor (plist-get flashcard :ease-factor))
-        (interval (plist-get flashcard :interval))
-        (bi-type (plist-get flashcard :bi-type)))
-    (if (eq bi-type 'FORWARD)
-        (progn
-          (when due (org-entry-put (point) BI-DUE-FORWARD-PROPERTY due))
-          (org-entry-put (point) BI-REPETITION-FORWARD-PROPERTY (number-to-string repetition))
-          (org-entry-put (point) BI-EASE-FACTOR-FORWARD-PROPERTY (format "%.2f" ease-factor))
-          (org-entry-put (point) BI-INTERVAL-FORWARD-PROPERTY (number-to-string interval)))
-      (when due (org-entry-put (point) BI-DUE-REVERSE-PROPERTY due))
-      (org-entry-put (point) BI-REPETITION-REVERSE-PROPERTY (number-to-string repetition))
-      (org-entry-put (point) BI-EASE-FACTOR-REVERSE-PROPERTY (format "%.2f" ease-factor))
-      (org-entry-put (point) BI-INTERVAL-REVERSE-PROPERTY (number-to-string interval)))))
+  "Save FLASHCARD's SM-2 state on the current heading."
+  (let ((forward (eq (plist-get flashcard :bi-type) 'FORWARD)))
+    (andy/org-study/write-sm2-state
+     flashcard
+     (if forward BI-DUE-FORWARD-PROPERTY BI-DUE-REVERSE-PROPERTY)
+     (if forward BI-REPETITION-FORWARD-PROPERTY BI-REPETITION-REVERSE-PROPERTY)
+     (if forward BI-EASE-FACTOR-FORWARD-PROPERTY BI-EASE-FACTOR-REVERSE-PROPERTY)
+     (if forward BI-INTERVAL-FORWARD-PROPERTY BI-INTERVAL-REVERSE-PROPERTY))))
 
-(defun andy/org-study/flashcard-bi/parse (org-file now)
-
-  (let* (
-	 (heading-text (org-get-heading 'no-todo 'no-tags))
-	 (body-text (andy/org-study/expand-attachment-links (andy/org-heading-at-point/get-body-text)))
-	 (context (andy/org-study/get-question-context-at-point))
-	 (level (org-outline-level))
-	 (forward-question (andy/org-study/expand-attachment-links (concat context "\n" (make-string level ?*) " " heading-text)))
-	 (reverse-question (andy/org-study/expand-attachment-links (concat context "\n" body-text)))
-	 (ID (org-entry-get nil "ID"))
-	 (forward-repetition (string-to-number (or (org-entry-get nil BI-REPETITION-FORWARD-PROPERTY) "0")))
-	 (forward-ease-factor (string-to-number (or (org-entry-get nil BI-EASE-FACTOR-FORWARD-PROPERTY) "2.5")))
-	 (forward-interval (string-to-number (or (org-entry-get nil BI-INTERVAL-FORWARD-PROPERTY) "0")))
-	 (forward-due (org-entry-get nil BI-DUE-FORWARD-PROPERTY))
-	 (is-forward-due (or (not forward-due) (string= forward-due "") (time-less-p (org-time-string-to-time forward-due) now)))
-	 (reverse-repetition (string-to-number (or (org-entry-get nil BI-REPETITION-REVERSE-PROPERTY) "0")))
-	 (reverse-ease-factor (string-to-number (or (org-entry-get nil BI-EASE-FACTOR-REVERSE-PROPERTY) "2.5")))
-	 (reverse-interval (string-to-number (or (org-entry-get nil BI-INTERVAL-REVERSE-PROPERTY) "0")))
-	 (reverse-due (org-entry-get nil BI-DUE-REVERSE-PROPERTY))
-	 (is-reverse-due (or (not reverse-due) (string= reverse-due "") (time-less-p (org-time-string-to-time reverse-due) now))))
-
-    (let ((forward-card
-	   (when is-forward-due
-	     (list
-	      :org-file org-file
-	      :ID ID
-	      :question forward-question
-	      :answer body-text
-	      :repetition forward-repetition
-	      :ease-factor forward-ease-factor
-	      :interval forward-interval
-	      :type 'BI
-	      :bi-type 'FORWARD)))
-	  (reverse-card
-	   (when is-reverse-due
-	     (list
-	      :org-file org-file
-	      :ID ID
-	      :question reverse-question
-	      :answer (andy/org-study/expand-attachment-links heading-text)
-	      :repetition reverse-repetition
-	      :ease-factor reverse-ease-factor
-	      :interval reverse-interval
-	      :type 'BI
-	      :bi-type 'REVERSE))))
-      (delq nil (list forward-card reverse-card)))))
-
-(defun andy/org-study/flashcard-bi/properties ()
-  "Returns a list of BI property names."
-  (list BI-DUE-FORWARD-PROPERTY
-	BI-INTERVAL-FORWARD-PROPERTY
-	BI-EASE-FACTOR-FORWARD-PROPERTY
-	BI-REPETITION-FORWARD-PROPERTY
-	BI-DUE-REVERSE-PROPERTY
-	BI-INTERVAL-REVERSE-PROPERTY
-	BI-EASE-FACTOR-REVERSE-PROPERTY
-	BI-REPETITION-REVERSE-PROPERTY))
+(defun andy/org-study/flashcard-bi/parse (now)
+  "Return the due BI flashcards at point, or nil.
+NOW is the current time used to decide whether the cards are due."
+  (let* ((heading-text (org-get-heading 'no-todo 'no-tags))
+         (body-text (andy/org-study/expand-attachment-links
+                     (andy/org-heading-at-point/get-body-text)))
+         (context (andy/org-study/get-question-context-at-point))
+         (level (org-outline-level))
+         (forward-question (andy/org-study/expand-attachment-links
+                            (concat context "\n" (make-string level ?*) " "
+                                    heading-text)))
+         (reverse-question (andy/org-study/expand-attachment-links
+                            (concat context "\n" body-text)))
+         (id (org-entry-get nil "ID"))
+         (forward-state (andy/org-study/read-sm2-state
+                         BI-DUE-FORWARD-PROPERTY
+                         BI-REPETITION-FORWARD-PROPERTY
+                         BI-EASE-FACTOR-FORWARD-PROPERTY
+                         BI-INTERVAL-FORWARD-PROPERTY))
+         (reverse-state (andy/org-study/read-sm2-state
+                         BI-DUE-REVERSE-PROPERTY
+                         BI-REPETITION-REVERSE-PROPERTY
+                         BI-EASE-FACTOR-REVERSE-PROPERTY
+                         BI-INTERVAL-REVERSE-PROPERTY)))
+    (delq nil
+          (list
+           (when (andy/org-study/card-due-p (plist-get forward-state :due) now)
+             (append forward-state
+                     (list :ID id
+                           :question forward-question
+                           :answer body-text
+                           :type 'BI
+                           :bi-type 'FORWARD)))
+           (when (andy/org-study/card-due-p (plist-get reverse-state :due) now)
+             (append reverse-state
+                     (list :ID id
+                           :question reverse-question
+                           :answer (andy/org-study/expand-attachment-links
+                                    heading-text)
+                           :type 'BI
+                           :bi-type 'REVERSE)))))))
 
 (provide 'flashcard-bi)
