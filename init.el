@@ -13,11 +13,18 @@
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
-;;; Keybindings
+;;; Global Keybindings
 
-(global-set-key (kbd "s-d") 'org-roam-dailies-goto-today)
-(global-set-key (kbd "s-[") 'org-roam-node-insert)
+;; Press command-[ to open the command palette.
+(global-set-key (kbd "s-p") 'execute-extended-command)
+;; Press command+/ to open the Emacs init file.
 (global-set-key (kbd "s-/") 'andy/open-init-file)
+;; Press command+[ to search for or create a new Org roam node, and insert the link.
+(global-set-key (kbd "s-[") 'org-roam-node-insert)
+;; Press command+o to search for or create a new Org roam node, and open it.
+(global-set-key (kbd "s-o") 'org-roam-node-find)
+;; Press command+d to open today's daily note.
+(global-set-key (kbd "s-d") 'org-roam-dailies-goto-today)
 
 ;;; Personal functions:
 
@@ -27,6 +34,9 @@
   (find-file user-init-file))
 
 ;;; Emacs
+
+;; Enable workspace tab bar.
+(tab-bar-mode 1)
 
 (setq debug-on-error t)
 (setq make-backup-files nil)
@@ -44,63 +54,23 @@
 
 ;;; Org mode
 
-;; Load Org before touching its variables.  `setq' on an unbound symbol is
-;; harmless, but `plist-put' must *read* the old value, so setting
-;; `org-format-latex-options' below signals `void-variable' unless Org is
-;; already loaded.  This also makes `org-directory' bound for Org Roam.
 (require 'org)
 
 (setq org-startup-with-latex-preview t)
 (setq org-startup-with-inline-images t)
 (setq org-cycle-hide-drawer-startup t)
+(setq org-format-latex-options (plist-put org-format-latex-options :scale 1.5))
+(setq org-directory (expand-file-name "~/Documents/org"))
 
-(setq org-format-latex-options
-      (plist-put org-format-latex-options :scale 1.5))
-(setq org-directory (expand-file-name "~/Documents/Org"))
+;;; Org roam
+
+(setq org-roam-directory org-directory)
 
 ;;; Org study
 
-;; The `org-study' package lives next to this file rather than in
-;; `package-user-dir', so put it on `load-path' before loading it.
-;; Resolve the directory from the file being loaded rather than from
-;; `default-directory', so the config works from any working directory.
-;; Keep this in a `let': a bare top-level `require' is evaluated by the
-;; byte-compiler, which would need the local package during a build.
 (let ((config-dir (file-name-directory (or load-file-name buffer-file-name))))
-  (add-to-list 'load-path (expand-file-name "org-study" config-dir))
-  ;; Loads org-study plus its review-queue entry point (org-study-api).
+  (add-to-list 'load-path (expand-file-name "src/org-study" config-dir))
   (require 'org-study-api))
-
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(anki-editor ghostel orderless org-bullets org-hide-drawers
-				 org-modern org-roam org-tidy svg-tag-mode transient
-				 vertico)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-
-;;; Org Roam
-
-;; Declare the variable so the byte-compiler knows it is not a typo; Org
-;; Roam itself is autoloaded on the next line and keeps the value set here.
-(defvar org-roam-directory)
-(setq org-roam-directory org-directory)
-(org-roam-db-autosync-mode)
-
-;;; Keybindings
-
-(global-set-key (kbd "RET") 'newline)
-(global-set-key (kbd "s-o") 'org-roam-node-find)
-(global-set-key (kbd "s-p") 'execute-extended-command)
 
 ;;; orderless
 
@@ -117,9 +87,19 @@
   :init
   (vertico-mode))
 
-;;; anki-editor
 
-;; Install anki-editor.
-(unless (package-installed-p 'anki-editor)
-  (package-vc-install
-   '(anki-editor . (:url "https://github.com/anki-editor/anki-editor"))))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(ghostel orderless org-bullets org-hide-drawers org-modern org-roam
+			 org-tidy svg-tag-mode transient vertico)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+

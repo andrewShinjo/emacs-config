@@ -242,33 +242,4 @@ deprecated `org-display-inline-images' on older Org versions."
 
 ;;; --- Session ---
 
-(defun andy/org-study/review-flashcards ()
-  "Collect all due flashcards and start a review session.
-Each file is visited once: heading metadata is refreshed and the
-cards are collected on the same pass."
-  (interactive)
-  (let ((create-lockfiles nil)
-        (files (directory-files-recursively org-directory "\\.org\\'"))
-        cards)
-    (dolist (file files)
-      (with-current-buffer (find-file-noselect file)
-        (let ((now (current-time)))
-          (org-map-entries
-           (lambda ()
-             (let ((types
-                    (andy/org-study/get-flashcard-types-on-heading-at-point)))
-               (when types
-                 (save-excursion
-                   (andy/org-study/create-properties types)
-                   (andy/org-study/delete-properties types))
-                 (dolist (type types)
-                   (when-let* ((parse-fn (org-study--get-handler type :parse)))
-                     (dolist (card (funcall parse-fn now))
-                       (push card cards)))))))
-           nil 'file))
-        (save-buffer)))
-    (org-id-update-id-locations)
-    (setq due-flashcards (andy/org-study/shuffle-list (nreverse cards)))
-    (andy/org-study/display-flashcard-question)))
-
 (provide 'org-study)

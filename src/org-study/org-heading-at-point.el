@@ -12,17 +12,17 @@
 
 (defun andy/org-heading-at-point/get-body-text ()
   "Return the body text of the heading at point.
-Planning lines, property drawers, drawers and trailing blank lines are
-excluded."
+Planning lines, property drawers, drawers, subordinate headings and
+trailing blank lines are excluded."
   (save-excursion
     (org-back-to-heading t)
-    (org-end-of-meta-data t)
-    (let ((beg (point))
-          (end (save-excursion
+    (let ((end (save-excursion
                  (outline-next-heading)
                  (skip-chars-backward " \t\n")
                  (point))))
-      (string-trim (buffer-substring-no-properties beg (max beg end))))))
+      (org-end-of-meta-data t)
+      (let ((beg (point)))
+        (string-trim (buffer-substring-no-properties beg (max beg end)))))))
 
 (defun andy/org-heading-at-point/map-children (function)
   "Call FUNCTION at each direct child of the heading at point.
@@ -36,20 +36,22 @@ Return a list of the results in child order."
         (nreverse results)))))
 
 (defun andy/org-study/get-question-context-at-point ()
-  "Return the #+title and ancestor headings for the heading at point."
+  "Return the #+title and ancestor heading path for the heading at point.
+Only heading lines are returned: ancestor bodies, property drawers,
+and subordinate headings are omitted."
   (save-excursion
-    (let ((context (when-let* ((title (andy/org-study/get-title-at-point)))
-                     (list (format "#+title: %s" title))))
+    (let ((title (andy/org-study/get-title-at-point))
           parents)
       (org-back-to-heading t)
       (while (org-up-heading-safe)
-        (let ((body (andy/org-study/expand-attachment-links
-                     (andy/org-heading-at-point/get-body-text))))
-          (push (concat (make-string (org-outline-level) ?*) " "
-                        (org-get-heading 'no-todo 'no-tags)
-                        (if (string-empty-p body) "" (concat "\n" body)))
-                parents)))
-      (string-join (append context parents) "\n"))))
+        (push (concat (make-string (org-outline-level) ?*) " "
+                      (org-get-heading 'no-todo 'no-tags))
+              parents))
+      (if title
+          (concat (format "#+title: %s\n" title)
+                  (when parents
+                    (concat "\n" (string-join parents "\n"))))
+        (string-join parents "\n")))))
 
 (defun andy/org-study/get-title-at-point ()
   "Return the #+title of the current buffer, or nil."

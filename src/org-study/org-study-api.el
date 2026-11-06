@@ -4,6 +4,40 @@
 (require 'org-study-queue)
 (require 'org-study)
 
+(defun andy/org-study-api/practice-flashcards ()
+  "Collect all due flashcards and start a review session.
+Each file is visited once: heading metadata is refreshed and the
+cards are collected on the same pass."
+  (interactive)
+  (let (cards
+		create-lockfiles
+        (files (directory-files-recursively
+				;; DIR =
+				org-directory
+				;; REGEXP =
+				"\\.org\\'")))
+    (dolist (file files)
+      (with-current-buffer (find-file-noselect file)
+        (let ((now (current-time)))
+          (org-map-entries
+           (lambda ()
+             (let ((types (andy/org-study/get-flashcard-types-on-heading-at-point)))
+               (when types
+                 (save-excursion
+                   (andy/org-study/create-properties types)
+                   (andy/org-study/delete-properties types))
+                 (dolist (type types)
+                   (when-let* ((parse-fn (org-study--get-handler type :parse)))
+                     (dolist (card (funcall parse-fn now))
+                       (push card cards)))))))
+           nil 'file))
+        (save-buffer)))
+    (org-id-update-id-locations)
+    (setq due-flashcards (andy/org-study/shuffle-list (nreverse cards)))
+    (andy/org-study/display-flashcard-question)))
+
+;; This file should only contain APIs. Refactor the code below out of the file in the future.
+
 (defun org-study--review-tags-internal (tags &optional skip)
   "Review items matching TAGS (a list of strings).
 Prompt for an interest rating on the previous item, then pick a

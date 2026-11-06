@@ -3,7 +3,6 @@
 (require 'org-heading-at-point)
 
 (defconst BI-TAG "bi")
-
 (defconst BI-DUE-FORWARD-PROPERTY "BI_FORWARD_DUE")
 (defconst BI-INTERVAL-FORWARD-PROPERTY "BI_INTERVAL_FORWARD")
 (defconst BI-EASE-FACTOR-FORWARD-PROPERTY "BI_EASE_FACTOR_FORWARD")
